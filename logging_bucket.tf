@@ -1,7 +1,8 @@
 # Part 7 (access logging) + Part 8 (CloudTrail) share this single bucket as their
 # log destination - provisioning a second hardened bucket per concern isn't
-# proportionate for a teaching lab.
-
+# proportionate for a teaching lab. This bucket doesn't log itself either
+# (that would be circular - a log bucket logging to another log bucket).
+#tfsec:ignore:aws-s3-enable-bucket-logging
 resource "aws_s3_bucket" "logs" {
   bucket = local.log_bucket_name
 

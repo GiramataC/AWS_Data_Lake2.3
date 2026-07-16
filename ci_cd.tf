@@ -47,7 +47,12 @@ resource "aws_iam_role" "github_actions_deploy" {
 }
 
 # Least-privilege for exactly the resources this project manages, rather
-# than reusing a broad managed policy.
+# than reusing a broad managed policy. The object-level statements below
+# necessarily wildcard the trailing "/*" (there's no non-wildcard way to
+# grant "objects under this bucket" - same rationale as Lab 2.1's
+# datasync_s3_access policy) and CloudTrail's management actions have no
+# resource-level ARN to scope to in the first place.
+#tfsec:ignore:aws-iam-no-policy-wildcards
 data "aws_iam_policy_document" "github_actions_deploy" {
   statement {
     sid    = "DataLakeBucketReadWrite"
@@ -159,6 +164,11 @@ resource "aws_iam_role_policy" "github_actions_deploy" {
 }
 
 # Remote state backend (Part: CI/CD needs persistent state across runs).
+# Access logging is skipped here for the same reason as the "logs" bucket
+# below: it's pure infrastructure holding Terraform state, not user data,
+# and logging it would mean provisioning yet another hardened bucket just
+# to log access to state files - not proportionate for a teaching lab.
+#tfsec:ignore:aws-s3-enable-bucket-logging
 resource "aws_s3_bucket" "tf_state" {
   bucket = local.tf_state_bucket_name
 
