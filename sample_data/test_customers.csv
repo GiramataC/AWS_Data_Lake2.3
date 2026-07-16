@@ -1,0 +1,4 @@
+customer_id,name,email,region,signup_date
+2001,Daniel Osei,daniel.osei@example.com,eu-west,2024-02-11
+2002,Emma Sorensen,emma.sorensen@example.com,eu-north,2024-05-30
+2003,Farid Haidari,farid.haidari@example.com,us-east,2024-08-17

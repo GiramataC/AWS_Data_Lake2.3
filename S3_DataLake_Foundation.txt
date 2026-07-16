@@ -1,0 +1,67 @@
+====================================================================
+Lab 2.3 - S3 Data Lake Foundation
+Region: eu-west-1 (Ireland)
+Account: 463470950988
+Provisioned via: Terraform (this directory)
+====================================================================
+
+RESOURCE INVENTORY
+--------------------------------------------------------------------
+Data lake bucket (pre-existing, from Lab 2.1)  data-lake-prod-463470950988
+  raw/                                          source data (immutable)
+  processed/                                    cleaned datasets
+  curated/                                      analytics-ready data       [new]
+  temp/                                         temporary job files        [new]
+  archive/                                      long-term storage          [new]
+Access-log / CloudTrail bucket                 data-lake-prod-logs-463470950988 [new]
+CloudTrail trail                                data-lake-audit-trail            [new]
+Bucket policy (HTTPS + SSE enforcement,
+  role-scoped allow for DataEngineerRole/
+  GlueServiceRole/RedshiftIAMRole)               on data-lake-prod-463470950988   [new]
+Lifecycle rules                                 processed-data-tiering,
+                                                 temp-data-expiration,
+                                                 archive-data-tiering             [new]
+Test data                                       raw/test_customers.csv           [new]
+
+DEVIATION FROM LAB SPEC
+--------------------------------------------------------------------
+1. Bucket was NOT created from scratch. It already existed
+   (data-lake-prod-463470950988), provisioned by Lab 2.1's Terraform as an
+   unavoidable prerequisite. This lab's Terraform (AWS_Lab2.3) references it
+   via a data source and only adds the pieces that were still missing:
+   bucket policy, access logging, CloudTrail, curated/temp/archive folders,
+   lifecycle rules. The four extra tags (Environment/Owner/Purpose/
+   CostCenter) required a small edit to Lab 2.1's s3_bucket.tf, since tags
+   live on the bucket resource itself.
+
+2. Bucket policy does not implement a hard "deny everyone except these 3
+   roles" rule. A strict denylist-of-other-principals would also have
+   blocked this account's own Terraform/admin role and DataSyncS3Role
+   (Lab 2.1), risking a real management lockout. Instead: two Deny
+   statements (enforce HTTPS, enforce SSE on upload) apply to everyone, and
+   two Allow statements grant DataEngineerRole/GlueServiceRole/
+   RedshiftIAMRole explicit bucket + object access.
+
+3. Region is eu-west-1, not us-east-1 as in the generic lab doc, to stay
+   consistent with every prior lab (1.1, 1.2, 2.1, 2.2) in this account.
+
+VERIFICATION (all confirmed live against AWS, 2026-07-16)
+--------------------------------------------------------------------
+Encryption              SSE-S3 (AES256), bucket key enabled
+Versioning              Enabled
+Access logging          -> data-lake-prod-logs-463470950988/s3-access-logs/
+CloudTrail              data-lake-audit-trail, IsLogging=true, multi-region,
+                        S3 data events (All) + management events
+Folder structure        raw/, processed/, curated/, temp/, archive/ all present
+Lifecycle rules         processed-data-tiering (Glacier@90d, Deep Archive@180d)
+                        temp-data-expiration (delete@1d)
+                        archive-data-tiering (Deep Archive@30d, delete@2555d)
+Bucket policy           enforced (HTTPS + SSE deny, 3-role allow)
+Test data               raw/test_customers.csv uploaded, SSE=AES256 confirmed
+Tags                    Environment=Production, Owner=DataEngineering,
+                        Purpose=DataLake, CostCenter=Analytics (+ existing
+                        Project/Lab/Name tags from Lab 2.1)
+
+Result: data-lake-prod-463470950988 now meets the full production data lake
+spec (security, governance, resilience, cost optimization) without
+duplicating the bucket Lab 2.1 already created.

@@ -1,0 +1,4 @@
+aws_region            = "eu-west-1"
+data_lake_bucket_name = "" # leave blank to auto-derive data-lake-prod-<account_id>
+log_bucket_name       = "" # leave blank to auto-derive data-lake-prod-logs-<account_id>
+upload_test_data      = true
