@@ -152,6 +152,15 @@ jobs:
   # Apply - push to main only, held behind the "production" GitHub
   # Environment. Configure a required reviewer on that environment in repo
   # Settings -> Environments, or this job runs unattended.
+  #
+  # Generates and applies its own plan in one continuous job/filesystem
+  # rather than downloading the "plan" job's saved -out artifact: passing a
+  # binary plan file across job/runner boundaries via upload-artifact ->
+  # download-artifact hit "Error: Cannot apply incomplete plan" here even
+  # though the originating plan had genuinely succeeded (confirmed via
+  # CloudTrail - no denied calls, clean refresh). The "plan" job above still
+  # runs on every push/PR as a visible preview; this job's own plan is what
+  # actually gets applied, immediately before applying it.
   # ----------------------------------------------------------
   apply:
     name: Terraform Apply
@@ -178,19 +187,13 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
-          # The default wrapper always returns exit code 0 to the shell
-          # (the real code goes to steps.<id>.outputs.exitcode instead) -
-          # without this, a genuinely failing `terraform plan` still shows
-          # the step/job as green and hands a broken plan file forward.
           terraform_wrapper: false
 
       - name: Terraform init
         run: terraform init
 
-      - name: Download plan artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: tfplan
+      - name: Terraform plan
+        run: terraform plan -out=tfplan -no-color
 
       - name: Terraform apply
         run: terraform apply -auto-approve tfplan
