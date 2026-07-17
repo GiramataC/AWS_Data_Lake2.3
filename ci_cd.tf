@@ -28,13 +28,20 @@ data "aws_iam_policy_document" "github_actions_assume_role" {
     # Scoped to: PR-triggered plan runs, push-to-main runs, and the
     # environment-gated apply job (environment:production requires a
     # reviewer to approve in the GitHub UI before this condition is met).
+    #
+    # The trailing "*" after owner/repo accounts for GitHub's immutable-ID
+    # subject claim format (repo:owner@ownerId/repo@repoId:...) as well as
+    # the plain owner/repo format - confirmed via CloudTrail that this repo
+    # actually sends "repo:GiramataC@176739852/AWS_Data_Lake2.3@1302964022:
+    # ref:refs/heads/main", not the plain form the first version of this
+    # policy assumed (which is why the first CI run got AccessDenied).
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
       values = [
-        "repo:${var.github_repo}:pull_request",
-        "repo:${var.github_repo}:ref:refs/heads/main",
-        "repo:${var.github_repo}:environment:production",
+        "repo:${local.github_owner}*/${local.github_repo_name}*:pull_request",
+        "repo:${local.github_owner}*/${local.github_repo_name}*:ref:refs/heads/main",
+        "repo:${local.github_owner}*/${local.github_repo_name}*:environment:production",
       ]
     }
   }

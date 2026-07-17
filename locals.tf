@@ -3,6 +3,9 @@ locals {
   log_bucket_name       = var.log_bucket_name != "" ? var.log_bucket_name : "data-lake-prod-logs-${data.aws_caller_identity.current.account_id}"
   tf_state_bucket_name  = var.tf_state_bucket_name != "" ? var.tf_state_bucket_name : "terraform-state-lab2-3-${data.aws_caller_identity.current.account_id}"
 
+  github_owner     = split("/", var.github_repo)[0]
+  github_repo_name = split("/", var.github_repo)[1]
+
   data_lake_role_arns = [
     data.aws_iam_role.data_engineer.arn,
     data.aws_iam_role.glue_service.arn,
