@@ -30,6 +30,11 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
+          # The default wrapper always returns exit code 0 to the shell
+          # (the real code goes to steps.<id>.outputs.exitcode instead) -
+          # without this, a genuinely failing `terraform plan` still shows
+          # the step/job as green and hands a broken plan file forward.
+          terraform_wrapper: false
 
       - name: Terraform fmt (check only)
         run: terraform fmt -check -recursive -diff
@@ -102,6 +107,11 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
+          # The default wrapper always returns exit code 0 to the shell
+          # (the real code goes to steps.<id>.outputs.exitcode instead) -
+          # without this, a genuinely failing `terraform plan` still shows
+          # the step/job as green and hands a broken plan file forward.
+          terraform_wrapper: false
 
       - name: Terraform init
         run: terraform init
@@ -168,6 +178,11 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
+          # The default wrapper always returns exit code 0 to the shell
+          # (the real code goes to steps.<id>.outputs.exitcode instead) -
+          # without this, a genuinely failing `terraform plan` still shows
+          # the step/job as green and hands a broken plan file forward.
+          terraform_wrapper: false
 
       - name: Terraform init
         run: terraform init
