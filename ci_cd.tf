@@ -177,6 +177,27 @@ data "aws_iam_policy_document" "github_actions_deploy" {
     actions   = ["iam:GetOpenIDConnectProvider"]
     resources = [data.aws_iam_openid_connect_provider.github.arn]
   }
+
+  # This role and its inline policy are themselves managed resources in
+  # this config (aws_iam_role.github_actions_deploy /
+  # aws_iam_role_policy.github_actions_deploy below), so every plan/apply
+  # refreshes them via these calls - scoped to only this one role, not IAM
+  # roles in general.
+  statement {
+    sid    = "SelfManageDeployRole"
+    effect = "Allow"
+    actions = [
+      "iam:GetRole",
+      "iam:GetRolePolicy",
+      "iam:PutRolePolicy",
+      "iam:DeleteRolePolicy",
+      "iam:ListRolePolicies",
+      "iam:ListAttachedRolePolicies",
+      "iam:TagRole",
+      "iam:UntagRole",
+    ]
+    resources = [aws_iam_role.github_actions_deploy.arn]
+  }
 }
 
 resource "aws_iam_role_policy" "github_actions_deploy" {
