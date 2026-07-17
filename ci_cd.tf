@@ -65,17 +65,17 @@ data "aws_iam_policy_document" "github_actions_deploy" {
     sid    = "DataLakeBucketReadWrite"
     effect = "Allow"
     actions = [
-      "s3:GetBucketLocation",
-      "s3:GetBucketVersioning",
-      "s3:GetBucketPolicy",
-      "s3:PutBucketPolicy",
-      "s3:GetBucketLogging",
-      "s3:PutBucketLogging",
-      "s3:GetLifecycleConfiguration",
-      "s3:PutLifecycleConfiguration",
-      "s3:GetEncryptionConfiguration",
-      "s3:GetBucketPublicAccessBlock",
+      # aws_s3_bucket resource/data-source refresh reads many sub-configs
+      # (cors, website, replication, acceleration, object lock, tagging,
+      # ...) regardless of whether this project's config touches them -
+      # s3:Get* avoids repeated one-off AccessDenied failures for whichever
+      # sub-config the provider decides to read next, still scoped to only
+      # this one bucket ARN rather than granted account-wide.
+      "s3:Get*",
       "s3:ListBucket",
+      "s3:PutBucketPolicy",
+      "s3:PutBucketLogging",
+      "s3:PutLifecycleConfiguration",
     ]
     resources = [data.aws_s3_bucket.data_lake.arn]
   }
@@ -97,20 +97,18 @@ data "aws_iam_policy_document" "github_actions_deploy" {
     sid    = "LogsAndStateBucketsFullManagement"
     effect = "Allow"
     actions = [
-      "s3:CreateBucket",
-      "s3:GetBucketLocation",
-      "s3:GetBucketVersioning",
-      "s3:PutBucketVersioning",
-      "s3:GetEncryptionConfiguration",
-      "s3:PutEncryptionConfiguration",
-      "s3:GetBucketPublicAccessBlock",
-      "s3:PutBucketPublicAccessBlock",
-      "s3:GetBucketPolicy",
-      "s3:PutBucketPolicy",
-      "s3:GetBucketAcl",
-      "s3:GetBucketTagging",
-      "s3:PutBucketTagging",
+      # Same s3:Get* rationale as DataLakeBucketReadWrite above - these two
+      # buckets are fully owned by this project (created and configured
+      # here), so the wildcard read is paired with full write control
+      # rather than just a handful of enumerated write actions.
+      "s3:Get*",
       "s3:ListBucket",
+      "s3:CreateBucket",
+      "s3:PutBucketVersioning",
+      "s3:PutEncryptionConfiguration",
+      "s3:PutBucketPublicAccessBlock",
+      "s3:PutBucketPolicy",
+      "s3:PutBucketTagging",
     ]
     resources = [
       aws_s3_bucket.logs.arn,
