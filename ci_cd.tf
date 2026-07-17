@@ -160,6 +160,23 @@ data "aws_iam_policy_document" "github_actions_deploy" {
     actions   = ["iam:GetRole"]
     resources = local.data_lake_role_arns
   }
+
+  # data.aws_iam_openid_connect_provider looks the provider up by URL, which
+  # requires listing all providers first (no resource-level scoping for
+  # List) before it can read the matched one's attributes.
+  statement {
+    sid       = "ListGithubOidcProvider"
+    effect    = "Allow"
+    actions   = ["iam:ListOpenIDConnectProviders"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid       = "ReadGithubOidcProvider"
+    effect    = "Allow"
+    actions   = ["iam:GetOpenIDConnectProvider"]
+    resources = [data.aws_iam_openid_connect_provider.github.arn]
+  }
 }
 
 resource "aws_iam_role_policy" "github_actions_deploy" {
